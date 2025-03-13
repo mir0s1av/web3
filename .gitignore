@@ -5,3 +5,5 @@ coverage/
 dist/
 *.log
 *.tsbuildinfo
+cache/*
+artifacts/*
