@@ -1,5 +1,8 @@
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers } from "hardhat"; 
+import { Crowdfunding } from '../typechain-types/Crowdfunding';
+
 
 async function withSnapshot(fn: () => Promise<void>): Promise<void> {
   const snapshotId = await ethers.provider.send("evm_snapshot", []);
@@ -11,22 +14,23 @@ async function withSnapshot(fn: () => Promise<void>): Promise<void> {
 }
 
 describe("Crowdfunding Contract", function () {
-  let Crowdfunding, crowdfunding, owner, addr1, addr2;
+  let crowdfunding:Crowdfunding, owner:HardhatEthersSigner, addr1:HardhatEthersSigner, addr2:HardhatEthersSigner;
   const campaignName = "Test Campaign";
   const campaignDesc = "A test crowdfunding campaign";
-  const goalAmount = ethers.parseEther("1"); // 1 ETH goal
+  const goalAmount = ethers.parseEther("1");
   const durationInDays = 7;
   let totalFunding = ethers.parseEther("0");
 
   before(async function () {
     [owner, addr1, addr2] = await ethers.getSigners();
-    Crowdfunding = await ethers.getContractFactory("Crowdfunding");
-    crowdfunding = await Crowdfunding.deploy(
+    const CrowdfundingFactory = await ethers.getContractFactory("Crowdfunding");
+  
+    crowdfunding = await CrowdfundingFactory.deploy(
       campaignName,
       campaignDesc,
       goalAmount,
       durationInDays
-    );
+    ) as unknown as Crowdfunding;
     await crowdfunding.waitForDeployment();
     await crowdfunding
       .connect(owner)
