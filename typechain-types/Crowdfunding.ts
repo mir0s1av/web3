@@ -38,6 +38,7 @@ export interface CrowdfundingInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "addTier"
+      | "campaignStatus"
       | "deadline"
       | "description"
       | "fund"
@@ -54,6 +55,10 @@ export interface CrowdfundingInterface extends Interface {
   encodeFunctionData(
     functionFragment: "addTier",
     values: [string, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "campaignStatus",
+    values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "deadline", values?: undefined): string;
   encodeFunctionData(
@@ -77,6 +82,10 @@ export interface CrowdfundingInterface extends Interface {
   encodeFunctionData(functionFragment: "withdraw", values?: undefined): string;
 
   decodeFunctionResult(functionFragment: "addTier", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "campaignStatus",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "deadline", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "description",
@@ -145,6 +154,8 @@ export interface Crowdfunding extends BaseContract {
     "nonpayable"
   >;
 
+  campaignStatus: TypedContractMethod<[], [bigint], "view">;
+
   deadline: TypedContractMethod<[], [bigint], "view">;
 
   description: TypedContractMethod<[], [string], "view">;
@@ -188,6 +199,9 @@ export interface Crowdfunding extends BaseContract {
     [void],
     "nonpayable"
   >;
+  getFunction(
+    nameOrSignature: "campaignStatus"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "deadline"
   ): TypedContractMethod<[], [bigint], "view">;
