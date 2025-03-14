@@ -101,7 +101,7 @@ describe("Crowdfunding Contract", function () {
       crowdfunding.connect(owner).removeTier(tierWithBackers)
     ).to.be.revertedWith("Cannot remove tier with backers");
   });
-  
+
   it("Should remove a tier with no backers", async function () {
     const snapshotId = await ethers.provider.send("evm_snapshot", []);
     const tierName = "Testing Delete";
@@ -117,5 +117,13 @@ describe("Crowdfunding Contract", function () {
     tiers = await crowdfunding.getTiers();
     expect(tiers.length).to.equal(2);
     await ethers.provider.send("evm_revert", [snapshotId]);
+  });
+
+  it("Should not fund an invalid tier", async function () {
+    await expect(crowdfunding.connect(addr1).fund(3)).to.be.revertedWith("Invalid tier index");
+  });
+
+  it("Should not fund an invalid amount", async function () {
+    await expect(crowdfunding.connect(addr1).fund(0, { value: ethers.parseEther("0.01") })).to.be.revertedWith("Invalid amount");
   });
 });
