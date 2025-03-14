@@ -1,5 +1,5 @@
-import { expect }from "chai";
-import {ethers}  from "hardhat";
+import { expect } from "chai";
+import { ethers } from "hardhat";
 
 describe("Crowdfunding Contract", function () {
   let Crowdfunding, crowdfunding, owner, addr1, addr2;
@@ -18,6 +18,10 @@ describe("Crowdfunding Contract", function () {
       durationInDays
     );
     await crowdfunding.waitForDeployment();
+    await crowdfunding
+      .connect(owner)
+      .addTier("Basic", ethers.parseEther("0.1"));
+    await crowdfunding.connect(owner).addTier("Super", ethers.parseEther("1"));
   });
 
   it("Should deploy with correct initial values", async function () {
@@ -28,24 +32,23 @@ describe("Crowdfunding Contract", function () {
   });
 
   it("Should accept valid funds", async function () {
-
-    const amount = ethers.parseEther("0.1")
-    await crowdfunding.connect(addr2).fund({ value: amount });
-    expect(await crowdfunding.getContractBalance()).to.equal(
-      amount
-    );
+    const amount = ethers.parseEther("0.1");
+    await crowdfunding.connect(addr2).fund(0, { value: amount });
+    expect(await crowdfunding.getContractBalance()).to.equal(amount);
   });
 
   it("Should prevent funding after deadline", async function () {
     // Take a snapshot before time manipulation
     const snapshotId = await ethers.provider.send("evm_snapshot", []);
-    
+
     // Fast-forward time past deadline
-    await ethers.provider.send("evm_increaseTime", [durationInDays * 24 * 60 * 60]);
+    await ethers.provider.send("evm_increaseTime", [
+      durationInDays * 24 * 60 * 60,
+    ]);
     await ethers.provider.send("evm_mine");
 
     await expect(
-      crowdfunding.connect(addr2).fund({ value: ethers.parseEther("0.5") })
+      crowdfunding.connect(addr2).fund(0, { value: ethers.parseEther("0.1") })
     ).to.be.revertedWith("Campaign has ended");
 
     // Revert time back
@@ -59,29 +62,60 @@ describe("Crowdfunding Contract", function () {
   });
 
   it("Should allow owner to withdraw funds after goal is met", async function () {
-
-    
-    await crowdfunding.connect(addr1).fund({ value: goalAmount });
+    await crowdfunding.connect(addr1).fund(1, { value: goalAmount });
 
     const ownerBalanceBefore = await ethers.provider.getBalance(owner.address);
 
     await crowdfunding.connect(owner).withdraw();
 
-
     const ownerBalanceAfter = await ethers.provider.getBalance(owner.address);
     expect(ownerBalanceAfter).to.be.greaterThan(ownerBalanceBefore);
-
-
   });
 
   it("Should not allow non-owners to withdraw funds", async function () {
     await expect(crowdfunding.connect(addr1).withdraw()).to.be.revertedWith(
-      "Only owner can withdraw"
+      "Only owner can call this function"
     );
   });
 
   it("Should return the correct contract balance", async function () {
-
     expect(await crowdfunding.getContractBalance()).to.equal(0);
+  });
+
+  it("Should add a tier", async function () {
+    const snapshotId = await ethers.provider.send("evm_snapshot", []);
+    const tierName = "Supreme";
+    const tierAmount = ethers.parseEther("0.1");
+    await crowdfunding.connect(owner).addTier(tierName, tierAmount);
+    const tiers = await crowdfunding.getTiers();
+    const newTier = tiers.find((tier) => tier.name === tierName);
+    expect(tiers.length).to.equal(3);
+    expect(newTier).to.be.not.undefined;
+    await ethers.provider.send("evm_revert", [snapshotId]);
+  });
+
+  it("Should not remove a tier with backers", async function () {
+    const tiers = await crowdfunding.getTiers();
+    const tierWithBackers = tiers.findIndex((tier) => tier.backers > 0);
+    await expect(
+      crowdfunding.connect(owner).removeTier(tierWithBackers)
+    ).to.be.revertedWith("Cannot remove tier with backers");
+  });
+  
+  it("Should remove a tier with no backers", async function () {
+    const snapshotId = await ethers.provider.send("evm_snapshot", []);
+    const tierName = "Testing Delete";
+    const tierAmount = ethers.parseEther("0.1");
+    await crowdfunding.connect(owner).addTier(tierName, tierAmount);
+
+    let tiers = await crowdfunding.getTiers();
+    expect(tiers.length).to.equal(3);
+    const tierIndexToDelete = tiers.findIndex((tier) => tier.name === tierName);
+    await expect(crowdfunding.connect(owner).removeTier(tierIndexToDelete)).to
+      .not.be.reverted;
+
+    tiers = await crowdfunding.getTiers();
+    expect(tiers.length).to.equal(2);
+    await ethers.provider.send("evm_revert", [snapshotId]);
   });
 });

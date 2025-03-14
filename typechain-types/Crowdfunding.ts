@@ -3,6 +3,7 @@
 /* eslint-disable */
 import type {
   BaseContract,
+  BigNumberish,
   BytesLike,
   FunctionFragment,
   Result,
@@ -19,34 +20,63 @@ import type {
   TypedContractMethod,
 } from "./common";
 
+export declare namespace Crowdfunding {
+  export type TierStruct = {
+    name: string;
+    amount: BigNumberish;
+    backers: BigNumberish;
+  };
+
+  export type TierStructOutput = [
+    name: string,
+    amount: bigint,
+    backers: bigint
+  ] & { name: string; amount: bigint; backers: bigint };
+}
+
 export interface CrowdfundingInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "addTier"
       | "deadline"
       | "description"
       | "fund"
       | "getContractBalance"
+      | "getTiers"
       | "goal"
       | "name"
       | "owner"
+      | "removeTier"
+      | "tiers"
       | "withdraw"
   ): FunctionFragment;
 
+  encodeFunctionData(
+    functionFragment: "addTier",
+    values: [string, BigNumberish]
+  ): string;
   encodeFunctionData(functionFragment: "deadline", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "description",
     values?: undefined
   ): string;
-  encodeFunctionData(functionFragment: "fund", values?: undefined): string;
+  encodeFunctionData(functionFragment: "fund", values: [BigNumberish]): string;
   encodeFunctionData(
     functionFragment: "getContractBalance",
     values?: undefined
   ): string;
+  encodeFunctionData(functionFragment: "getTiers", values?: undefined): string;
   encodeFunctionData(functionFragment: "goal", values?: undefined): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "removeTier",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(functionFragment: "tiers", values: [BigNumberish]): string;
   encodeFunctionData(functionFragment: "withdraw", values?: undefined): string;
 
+  decodeFunctionResult(functionFragment: "addTier", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "deadline", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "description",
@@ -57,9 +87,12 @@ export interface CrowdfundingInterface extends Interface {
     functionFragment: "getContractBalance",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "getTiers", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "goal", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "removeTier", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "tiers", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 }
 
@@ -106,19 +139,41 @@ export interface Crowdfunding extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  addTier: TypedContractMethod<
+    [_name: string, _amount: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
   deadline: TypedContractMethod<[], [bigint], "view">;
 
   description: TypedContractMethod<[], [string], "view">;
 
-  fund: TypedContractMethod<[], [void], "payable">;
+  fund: TypedContractMethod<[_tierIndex: BigNumberish], [void], "payable">;
 
   getContractBalance: TypedContractMethod<[], [bigint], "view">;
+
+  getTiers: TypedContractMethod<[], [Crowdfunding.TierStructOutput[]], "view">;
 
   goal: TypedContractMethod<[], [bigint], "view">;
 
   name: TypedContractMethod<[], [string], "view">;
 
   owner: TypedContractMethod<[], [string], "view">;
+
+  removeTier: TypedContractMethod<[_index: BigNumberish], [void], "nonpayable">;
+
+  tiers: TypedContractMethod<
+    [arg0: BigNumberish],
+    [
+      [string, bigint, bigint] & {
+        name: string;
+        amount: bigint;
+        backers: bigint;
+      }
+    ],
+    "view"
+  >;
 
   withdraw: TypedContractMethod<[], [void], "nonpayable">;
 
@@ -127,6 +182,13 @@ export interface Crowdfunding extends BaseContract {
   ): T;
 
   getFunction(
+    nameOrSignature: "addTier"
+  ): TypedContractMethod<
+    [_name: string, _amount: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "deadline"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
@@ -134,10 +196,13 @@ export interface Crowdfunding extends BaseContract {
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "fund"
-  ): TypedContractMethod<[], [void], "payable">;
+  ): TypedContractMethod<[_tierIndex: BigNumberish], [void], "payable">;
   getFunction(
     nameOrSignature: "getContractBalance"
   ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "getTiers"
+  ): TypedContractMethod<[], [Crowdfunding.TierStructOutput[]], "view">;
   getFunction(
     nameOrSignature: "goal"
   ): TypedContractMethod<[], [bigint], "view">;
@@ -147,6 +212,22 @@ export interface Crowdfunding extends BaseContract {
   getFunction(
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "removeTier"
+  ): TypedContractMethod<[_index: BigNumberish], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "tiers"
+  ): TypedContractMethod<
+    [arg0: BigNumberish],
+    [
+      [string, bigint, bigint] & {
+        name: string;
+        amount: bigint;
+        backers: bigint;
+      }
+    ],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "withdraw"
   ): TypedContractMethod<[], [void], "nonpayable">;
