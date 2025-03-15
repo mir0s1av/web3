@@ -1,13 +1,13 @@
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
-import { ethers } from "hardhat"; 
-import { Crowdfunding } from '../typechain-types/Crowdfunding';
+import { ethers } from "hardhat";
+import { Crowdfunding } from "../typechain-types/Crowdfunding";
 
 // Define the enum to match your Solidity contract
 enum CampaignStatus {
   Active,
   Successful,
-  Failed
+  Failed,
 }
 
 async function withSnapshot(fn: () => Promise<void>): Promise<void> {
@@ -20,7 +20,10 @@ async function withSnapshot(fn: () => Promise<void>): Promise<void> {
 }
 
 describe("Crowdfunding Contract", function () {
-  let crowdfunding:Crowdfunding, owner:HardhatEthersSigner, addr1:HardhatEthersSigner, addr2:HardhatEthersSigner;
+  let crowdfunding: Crowdfunding,
+    owner: HardhatEthersSigner,
+    addr1: HardhatEthersSigner,
+    addr2: HardhatEthersSigner;
   const campaignName = "Test Campaign";
   const campaignDesc = "A test crowdfunding campaign";
   const goalAmount = ethers.parseEther("1");
@@ -30,13 +33,13 @@ describe("Crowdfunding Contract", function () {
   before(async function () {
     [owner, addr1, addr2] = await ethers.getSigners();
     const CrowdfundingFactory = await ethers.getContractFactory("Crowdfunding");
-  
-    crowdfunding = await CrowdfundingFactory.deploy(
+
+    crowdfunding = (await CrowdfundingFactory.deploy(
       campaignName,
       campaignDesc,
       goalAmount,
       durationInDays
-    ) as unknown as Crowdfunding;
+    )) as unknown as Crowdfunding;
     await crowdfunding.waitForDeployment();
     await crowdfunding
       .connect(owner)
@@ -174,27 +177,31 @@ describe("Crowdfunding Contract", function () {
 
       await expect(status).to.equal(CampaignStatus[1]);
       await expect(crowdfunding.connect(addr1).refund()).to.be.revertedWith(
-      "Refund is not available"
-    );
+        "Refund is not available"
+      );
+    });
   });
-})
 
-it("Should not refund if a backer has no contribution", async function () {
-  await withSnapshot(async () => {
-    const backerPaidBefore = await crowdfunding.getBackersTotalContribution(addr1.address);
-    expect(backerPaidBefore).to.equal(0);
-    await ethers.provider.send("evm_increaseTime", [
-      durationInDays * 24 * 60 * 60,
-    ]);
-    await ethers.provider.send("evm_mine");
+  it("Should not refund if a backer has no contribution", async function () {
+    await withSnapshot(async () => {
+      const backerPaidBefore = await crowdfunding.getBackersTotalContribution(
+        addr1.address
+      );
+      expect(backerPaidBefore).to.equal(0);
+      await ethers.provider.send("evm_increaseTime", [
+        durationInDays * 24 * 60 * 60,
+      ]);
+      await ethers.provider.send("evm_mine");
 
-    await expect(crowdfunding.connect(addr1).fund(1, { value: ethers.parseEther("0.1") })).to.be.revertedWith("Campaign has ended");
-  
-    await expect(crowdfunding.connect(addr1).refund()).to.be.revertedWith(
-    "No contribution to refund"
-  );
-});
-})
+      await expect(
+        crowdfunding.connect(addr1).fund(1, { value: ethers.parseEther("0.1") })
+      ).to.be.revertedWith("Campaign has ended");
+
+      await expect(crowdfunding.connect(addr1).refund()).to.be.revertedWith(
+        "No contribution to refund"
+      );
+    });
+  });
 
   it("Should refund if campaign is failed", async function () {
     await withSnapshot(async () => {
@@ -202,12 +209,24 @@ it("Should not refund if a backer has no contribution", async function () {
         durationInDays * 24 * 60 * 60,
       ]);
       await ethers.provider.send("evm_mine");
-      const backerPaidBefore = await crowdfunding.getBackersTotalContribution(addr2.address);
+      const backerPaidBefore = await crowdfunding.getBackersTotalContribution(
+        addr2.address
+      );
       expect(backerPaidBefore).to.be.greaterThan(0);
       await expect(crowdfunding.connect(addr2).refund()).to.not.be.reverted;
-      const backerPaid = await crowdfunding.getBackersTotalContribution(addr2.address);
+      const backerPaid = await crowdfunding.getBackersTotalContribution(
+        addr2.address
+      );
       expect(backerPaid).to.equal(0);
     });
   });
 
+  it("Should pause and resume campaign", async function () {
+    await crowdfunding.connect(owner).pauseCampaign();
+    await expect(crowdfunding.connect(addr1).fund(1, { value: ethers.parseEther("0.1") })).to.be.revertedWith("Campaign is paused");
+    await crowdfunding.connect(owner).resumeCampaign();
+    await crowdfunding.connect(addr1).fund(0, { value: ethers.parseEther("0.1") });
+    const backerPaid = await crowdfunding.getBackersTotalContribution(addr1.address);
+    expect(backerPaid).to.equal(ethers.parseEther("0.1"));
+  });
 });
