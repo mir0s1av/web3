@@ -3,6 +3,12 @@ import { expect } from "chai";
 import { ethers } from "hardhat"; 
 import { Crowdfunding } from '../typechain-types/Crowdfunding';
 
+// Define the enum to match your Solidity contract
+enum CampaignStatus {
+  Active,
+  Successful,
+  Failed
+}
 
 async function withSnapshot(fn: () => Promise<void>): Promise<void> {
   const snapshotId = await ethers.provider.send("evm_snapshot", []);
@@ -146,4 +152,62 @@ describe("Crowdfunding Contract", function () {
       crowdfunding.connect(addr1).fund(0, { value: ethers.parseEther("0.01") })
     ).to.be.revertedWith("Invalid amount");
   });
+
+  it("Should not refund if campaign is not failed", async function () {
+    await expect(crowdfunding.connect(addr1).refund()).to.be.revertedWith(
+      "Refund is not available"
+    );
+  });
+  it("Should not refund if campaign is still active", async function () {
+    const campaignStatus = await crowdfunding.getCampaignStatus();
+    const status = CampaignStatus[Number(campaignStatus)];
+    await expect(status).to.equal(CampaignStatus[0]);
+    await expect(crowdfunding.connect(addr1).refund()).to.be.revertedWith(
+      "Refund is not available"
+    );
+  });
+  it("Should not refund if campaign is sucessfull", async function () {
+    await withSnapshot(async () => {
+      await crowdfunding.connect(addr1).fund(1, { value: goalAmount });
+      const campaignStatus = await crowdfunding.getCampaignStatus();
+      const status = CampaignStatus[Number(campaignStatus)];
+
+      await expect(status).to.equal(CampaignStatus[1]);
+      await expect(crowdfunding.connect(addr1).refund()).to.be.revertedWith(
+      "Refund is not available"
+    );
+  });
+})
+
+it("Should not refund if a backer has no contribution", async function () {
+  await withSnapshot(async () => {
+    const backerPaidBefore = await crowdfunding.getBackersTotalContribution(addr1.address);
+    expect(backerPaidBefore).to.equal(0);
+    await ethers.provider.send("evm_increaseTime", [
+      durationInDays * 24 * 60 * 60,
+    ]);
+    await ethers.provider.send("evm_mine");
+
+    await expect(crowdfunding.connect(addr1).fund(1, { value: ethers.parseEther("0.1") })).to.be.revertedWith("Campaign has ended");
+  
+    await expect(crowdfunding.connect(addr1).refund()).to.be.revertedWith(
+    "No contribution to refund"
+  );
+});
+})
+
+  it("Should refund if campaign is failed", async function () {
+    await withSnapshot(async () => {
+      await ethers.provider.send("evm_increaseTime", [
+        durationInDays * 24 * 60 * 60,
+      ]);
+      await ethers.provider.send("evm_mine");
+      const backerPaidBefore = await crowdfunding.getBackersTotalContribution(addr2.address);
+      expect(backerPaidBefore).to.be.greaterThan(0);
+      await expect(crowdfunding.connect(addr2).refund()).to.not.be.reverted;
+      const backerPaid = await crowdfunding.getBackersTotalContribution(addr2.address);
+      expect(backerPaid).to.equal(0);
+    });
+  });
+
 });

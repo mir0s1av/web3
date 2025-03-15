@@ -7,21 +7,35 @@ contract Crowdfunding {
     uint256 public goal;
     uint256 public deadline;
     address public owner;
+    bool public isCampaignPaused;
 
     struct Tier {
         string name;
         uint256 amount;
         uint256 backers;
     }
+    struct Backer {
+        address backer;
+        uint256 totalContribution;
+        mapping(uint256 => bool) fundedTiers;
+    }
     enum CampaignStatus {
         Active,
         Successful,
         Failed
     }
+    mapping(address => Backer) public backers;
     CampaignStatus public campaignStatus;
     Tier[] public tiers;
 
+
+    modifier campaignNotPaused() {
+        require(!isCampaignPaused, "Campaign is paused");
+        _;
+    }
+
     modifier campaignActive() {
+        require(block.timestamp < deadline, "Campaign has ended");
         require(
             campaignStatus == CampaignStatus.Active,
             "Campaign is not active"
@@ -73,12 +87,14 @@ contract Crowdfunding {
         }
     }
 
-    function fund(uint256 _tierIndex) public payable campaignActive {
-        require(block.timestamp < deadline, "Campaign has ended");
+    function fund(uint256 _tierIndex) public payable campaignActive campaignNotPaused {
         require(_tierIndex < tiers.length, "Invalid tier index");
         require(msg.value == tiers[_tierIndex].amount, "Invalid amount");
         tiers[_tierIndex].backers++;
         checkAndUpdateCampaignStatus();
+        backers[msg.sender].totalContribution += msg.value;
+        backers[msg.sender].fundedTiers[_tierIndex] = true;
+
     }
 
     function withdraw() public onlyOwner {
@@ -112,5 +128,33 @@ contract Crowdfunding {
 
     function getTiers() public view returns (Tier[] memory) {
         return tiers;
+    }
+
+    function refund() public {
+        checkAndUpdateCampaignStatus();
+        require(campaignStatus == CampaignStatus.Failed, "Refund is not available");
+        uint256 amount = backers[msg.sender].totalContribution;
+        require(amount > 0, "No contribution to refund");
+        backers[msg.sender].totalContribution = 0;
+        payable(msg.sender).transfer(amount);
+    }
+
+    function hasFundedTier(address _backer, uint256 _tierIndex) public view returns (bool) {
+        return backers[_backer].fundedTiers[_tierIndex];
+    }
+    function getBackersTotalContribution(address _backer) public view returns (uint256) {
+        return backers[_backer].totalContribution;
+    }
+
+    function getCampaignStatus() public view returns (CampaignStatus) {
+        return campaignStatus;
+    }
+
+    function pauseCampaign() public onlyOwner {
+        isCampaignPaused = true;
+    }
+
+    function resumeCampaign() public onlyOwner {
+        isCampaignPaused = false;
     }
 }
