@@ -17,23 +17,41 @@ declare module "hardhat/types/runtime" {
       name: "Crowdfunding",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Crowdfunding__factory>;
+    getContractFactory(
+      name: "CrowdFundingFactory",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.CrowdFundingFactory__factory>;
 
     getContractAt(
       name: "Crowdfunding",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.Crowdfunding>;
+    getContractAt(
+      name: "CrowdFundingFactory",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.CrowdFundingFactory>;
 
     deployContract(
       name: "Crowdfunding",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Crowdfunding>;
+    deployContract(
+      name: "CrowdFundingFactory",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.CrowdFundingFactory>;
 
     deployContract(
       name: "Crowdfunding",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Crowdfunding>;
+    deployContract(
+      name: "CrowdFundingFactory",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.CrowdFundingFactory>;
 
     // default types
     getContractFactory(

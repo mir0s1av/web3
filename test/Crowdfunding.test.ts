@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { Crowdfunding } from "../typechain-types/Crowdfunding";
 
-// Define the enum to match your Solidity contract
+
 enum CampaignStatus {
   Active,
   Successful,
@@ -35,6 +35,7 @@ describe("Crowdfunding Contract", function () {
     const CrowdfundingFactory = await ethers.getContractFactory("Crowdfunding");
 
     crowdfunding = (await CrowdfundingFactory.deploy(
+      owner.address,
       campaignName,
       campaignDesc,
       goalAmount,

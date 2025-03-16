@@ -8,7 +8,6 @@ contract Crowdfunding {
     uint256 public deadline;
     address public owner;
     bool public isCampaignPaused;
-
     struct Tier {
         string name;
         uint256 amount;
@@ -60,16 +59,18 @@ contract Crowdfunding {
     }
 
     constructor(
+        address _owner,
         string memory _name,
         string memory _description,
         uint256 _goal,
         uint256 _durationInDays
     ) {
+        
         name = _name;
         description = _description;
         goal = _goal;
         deadline = block.timestamp + _durationInDays * 1 days;
-        owner = msg.sender;
+        owner = _owner;
         campaignStatus = CampaignStatus.Active;
     }
 
