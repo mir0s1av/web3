@@ -3,7 +3,6 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { Crowdfunding } from "../typechain-types/Crowdfunding";
 
-
 enum CampaignStatus {
   Active,
   Successful,
@@ -32,20 +31,21 @@ describe("Crowdfunding Contract", function () {
 
   before(async function () {
     [owner, addr1, addr2] = await ethers.getSigners();
-    const CrowdfundingFactory = await ethers.getContractFactory("Crowdfunding");
-
-    crowdfunding = (await CrowdfundingFactory.deploy(
+    crowdfunding = (await ethers.deployContract("Crowdfunding", [
       owner.address,
       campaignName,
       campaignDesc,
       goalAmount,
-      durationInDays
-    )) as unknown as Crowdfunding;
-    await crowdfunding.waitForDeployment();
+      durationInDays,
+    ])) as unknown as Crowdfunding;
+
+    // await crowdfunding.waitForDeployment();
     await crowdfunding
       .connect(owner)
       .addTier("Basic", ethers.parseEther("0.1"));
-    await crowdfunding.connect(owner).addTier("Super", ethers.parseEther("1"));
+    await crowdfunding
+      .connect(owner)
+      .addTier("Super", ethers.parseEther("1"));
   });
 
   it("Should deploy with correct initial values", async function () {
@@ -224,10 +224,16 @@ describe("Crowdfunding Contract", function () {
 
   it("Should pause and resume campaign", async function () {
     await crowdfunding.connect(owner).pauseCampaign();
-    await expect(crowdfunding.connect(addr1).fund(1, { value: ethers.parseEther("0.1") })).to.be.revertedWith("Campaign is paused");
+    await expect(
+      crowdfunding.connect(addr1).fund(1, { value: ethers.parseEther("0.1") })
+    ).to.be.revertedWith("Campaign is paused");
     await crowdfunding.connect(owner).resumeCampaign();
-    await crowdfunding.connect(addr1).fund(0, { value: ethers.parseEther("0.1") });
-    const backerPaid = await crowdfunding.getBackersTotalContribution(addr1.address);
+    await crowdfunding
+      .connect(addr1)
+      .fund(0, { value: ethers.parseEther("0.1") });
+    const backerPaid = await crowdfunding.getBackersTotalContribution(
+      addr1.address
+    );
     expect(backerPaid).to.equal(ethers.parseEther("0.1"));
   });
 });

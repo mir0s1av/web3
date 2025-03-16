@@ -49,9 +49,7 @@ export interface CrowdFundingFactoryInterface extends Interface {
       | "createCampaign"
       | "getAllCampaigns"
       | "getCampaignsOfUser"
-      | "isPaused"
       | "owner"
-      | "pauseAndResumeCampaing"
       | "userCampaigns"
   ): FunctionFragment;
 
@@ -71,12 +69,7 @@ export interface CrowdFundingFactoryInterface extends Interface {
     functionFragment: "getCampaignsOfUser",
     values: [AddressLike]
   ): string;
-  encodeFunctionData(functionFragment: "isPaused", values?: undefined): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "pauseAndResumeCampaing",
-    values?: undefined
-  ): string;
   encodeFunctionData(
     functionFragment: "userCampaigns",
     values: [AddressLike, BigNumberish]
@@ -95,12 +88,7 @@ export interface CrowdFundingFactoryInterface extends Interface {
     functionFragment: "getCampaignsOfUser",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "isPaused", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "pauseAndResumeCampaing",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "userCampaigns",
     data: BytesLike
@@ -186,11 +174,7 @@ export interface CrowdFundingFactory extends BaseContract {
     "view"
   >;
 
-  isPaused: TypedContractMethod<[], [boolean], "view">;
-
   owner: TypedContractMethod<[], [string], "view">;
-
-  pauseAndResumeCampaing: TypedContractMethod<[], [void], "nonpayable">;
 
   userCampaigns: TypedContractMethod<
     [arg0: AddressLike, arg1: BigNumberish],
@@ -250,14 +234,8 @@ export interface CrowdFundingFactory extends BaseContract {
     "view"
   >;
   getFunction(
-    nameOrSignature: "isPaused"
-  ): TypedContractMethod<[], [boolean], "view">;
-  getFunction(
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
-  getFunction(
-    nameOrSignature: "pauseAndResumeCampaing"
-  ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "userCampaigns"
   ): TypedContractMethod<

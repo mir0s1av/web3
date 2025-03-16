@@ -11,9 +11,7 @@ describe("Testing factory crowdfunding",async ()=>{
 
   before(async function () {
     [owner] = await ethers.getSigners();
-    const crowdfundingFactory = await ethers.getContractFactory("CrowdFundingFactory");
-    factory = await crowdfundingFactory.deploy() as unknown as CrowdFundingFactory;
-    await factory.waitForDeployment();
+    factory = await ethers.deployContract("CrowdFundingFactory") as unknown as CrowdFundingFactory;
   });
 
   it("should create a new campaign", async () => {
